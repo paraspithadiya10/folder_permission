@@ -1,7 +1,7 @@
 name: folder_permission
 description: "A new Flutter plugin."
 version: 0.0.1
-homepage:
+repository: https://github.com/paraspithadiya10/folder_permission
 
 environment:
   sdk: ^3.8.1
