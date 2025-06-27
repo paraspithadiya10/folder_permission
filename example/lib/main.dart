@@ -15,7 +15,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   bool? hasPermission;
   final String folderPath =
-      "/Android/media/com.whatsapp/WhatsApp/Media/.Statuses";
+      "Android/media/com.whatsapp/WhatsApp/Media/.Statuses";
 
   @override
   void initState() {
@@ -44,6 +44,8 @@ class _MyAppState extends State<MyApp> {
   Future<void> _requestPermission() async {
     try {
       print('Requesting permission for path: $folderPath');
+
+      // Request permission directly - the Android implementation will open to the exact path
       final granted = await FolderPermission.request(path: folderPath);
       print('Permission request result: $granted');
 
@@ -75,6 +77,12 @@ class _MyAppState extends State<MyApp> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Text(
+                'Path: $folderPath',
+                style: Theme.of(context).textTheme.titleSmall,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: _requestPermission,
                 child: const Text('Give Permission'),

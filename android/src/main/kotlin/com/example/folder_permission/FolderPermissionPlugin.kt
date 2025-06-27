@@ -90,14 +90,73 @@ class FolderPermissionPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, P
       return
     }
 
-    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-      // Determine the correct path based on Android version
-      val pickerInitialPath = Environment.getExternalStorageDirectory().absolutePath +
-              "/$path"
-      val folderUri = Uri.parse("file://$pickerInitialPath")
-      putExtra(DocumentsContract.EXTRA_INITIAL_URI, folderUri)
+    try {
+      val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+        // Handle different path formats
+        if (path != null) {
+          val cleanPath = path.removePrefix("/")
+          Log.d("FolderPermission", "Requesting permission for path: $cleanPath")
+          
+          // Try to construct the most appropriate URI for the given path
+          val initialUri = when {
+            // Handle Android/data paths
+            cleanPath.startsWith("Android/data/") -> {
+              Log.d("FolderPermission", "Detected Android/data path")
+              DocumentsContract.buildDocumentUri(
+                "com.android.externalstorage.documents", 
+                "primary:$cleanPath"
+              )
+            }
+            // Handle Android/media paths  
+            cleanPath.startsWith("Android/media/") -> {
+              Log.d("FolderPermission", "Detected Android/media path")
+              DocumentsContract.buildDocumentUri(
+                "com.android.externalstorage.documents", 
+                "primary:$cleanPath"
+              )
+            }
+            // Handle Android/obb paths
+            cleanPath.startsWith("Android/obb/") -> {
+              Log.d("FolderPermission", "Detected Android/obb path")
+              DocumentsContract.buildDocumentUri(
+                "com.android.externalstorage.documents", 
+                "primary:$cleanPath"
+              )
+            }
+            // Handle any Android subdirectory
+            cleanPath.startsWith("Android/") -> {
+              Log.d("FolderPermission", "Detected Android subdirectory path")
+              DocumentsContract.buildDocumentUri(
+                "com.android.externalstorage.documents", 
+                "primary:$cleanPath"
+              )
+            }
+            // Handle regular storage paths (Downloads, Documents, Pictures, etc.)
+            else -> {
+              Log.d("FolderPermission", "Detected regular storage path")
+              // Try to build URI for regular external storage path
+              DocumentsContract.buildDocumentUri(
+                "com.android.externalstorage.documents", 
+                "primary:$cleanPath"
+              )
+            }
+          }
+          
+          Log.d("FolderPermission", "Setting initial URI to: $initialUri")
+          putExtra(DocumentsContract.EXTRA_INITIAL_URI, initialUri)
+        }
+        
+        // Add flags to make the intent more likely to work
+        addCategory(Intent.CATEGORY_DEFAULT)
+      }
+      
+      Log.d("FolderPermission", "Starting document tree picker...")
+      activity?.startActivityForResult(intent, 2000)
+    } catch (e: Exception) {
+      Log.e("FolderPermission", "Failed to open directory picker", e)
+      pendingResult?.error("INTENT_ERROR", "Failed to open directory picker: ${e.message}", null)
+      pendingResult = null
     }
-    activity?.startActivityForResult(intent, 2000)
   }
 
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
