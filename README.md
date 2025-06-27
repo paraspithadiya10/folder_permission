@@ -1,6 +1,6 @@
 # folder_permission
 
-A new Flutter plugin.
+A new Flutter plugin used to give folder specific permission.
 
 ## Getting Started
 
