@@ -5,15 +5,15 @@
 // //
 // // For more information about Flutter integration tests, please see
 // // https://flutter.dev/to/integration-testing
-
+//
 // import 'package:flutter_test/flutter_test.dart';
 // import 'package:integration_test/integration_test.dart';
-
+//
 // import 'package:folder_permission/folder_permission.dart';
-
+//
 // void main() {
 //   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-
+//
 //   testWidgets('getPlatformVersion test', (WidgetTester tester) async {
 //     final FolderPermission plugin = FolderPermission();
 //     final String? version = await plugin.getPlatformVersion();
