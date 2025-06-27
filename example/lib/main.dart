@@ -15,7 +15,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   bool? hasPermission;
   final String folderPath =
-      "Android/media/com.whatsapp/WhatsApp/Media/.Statuses";
+      "/Android/media/com.whatsapp/WhatsApp/Media/.Statuses";
 
   @override
   void initState() {

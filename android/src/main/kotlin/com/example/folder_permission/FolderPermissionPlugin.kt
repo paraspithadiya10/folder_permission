@@ -46,41 +46,46 @@ class FolderPermissionPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, P
       }
       "check_Permission" -> {
         val path = call.argument<String>("path")
-        val uriPermissions = context.contentResolver.persistedUriPermissions
-        Log.d("FolderPermission", "Checking permission for path: $path")
-        Log.d("FolderPermission", "Number of persisted permissions: ${uriPermissions.size}")
-        
-        val hasPermission = uriPermissions.any { permission ->
-          val uriPath = permission.uri.toString()
-          Log.d("FolderPermission", "Checking URI: $uriPath")
-          
-          // Clean the path by removing leading slash
-          val cleanPath = path?.removePrefix("/") ?: ""
-          val encodedPath = Uri.encode(cleanPath)
-          
-          // Check multiple ways the path might be encoded in the URI
-          val pathVariants = listOf(
-            cleanPath,
-            encodedPath,
-            cleanPath.replace("/", "%2F"),
-            cleanPath.replace("/", "%2f")
-          )
-          
-          val matches = pathVariants.any { variant ->
-            uriPath.contains(variant, ignoreCase = true)
-          }
-          
-          Log.d("FolderPermission", "URI matches path: $matches, isReadPermission: ${permission.isReadPermission}")
-          matches && permission.isReadPermission
-        }
-        
-        Log.d("FolderPermission", "Final permission result: $hasPermission")
+        val hasPermission = checkPathPermission(path)
         result.success(hasPermission)
       }
       else -> {
         result.notImplemented()
       }
     }
+  }
+
+  private fun checkPathPermission(path: String?): Boolean {
+    val uriPermissions = context.contentResolver.persistedUriPermissions
+    Log.d("FolderPermission", "Checking permission for path: $path")
+    Log.d("FolderPermission", "Number of persisted permissions: ${uriPermissions.size}")
+
+    val hasPermission = uriPermissions.any { permission ->
+      val uriPath = permission.uri.toString()
+      Log.d("FolderPermission", "Checking URI: $uriPath")
+
+      // Clean the path by removing leading slash
+      val cleanPath = path?.removePrefix("/") ?: ""
+      val encodedPath = Uri.encode(cleanPath)
+
+      // Check multiple ways the path might be encoded in the URI
+      val pathVariants = listOf(
+        cleanPath,
+        encodedPath,
+        cleanPath.replace("/", "%2F"),
+        cleanPath.replace("/", "%2f")
+      )
+
+      val matches = pathVariants.any { variant ->
+        uriPath.contains(variant, ignoreCase = true)
+      }
+
+      Log.d("FolderPermission", "URI matches path: $matches, isReadPermission: ${permission.isReadPermission}")
+      matches && permission.isReadPermission
+    }
+    
+    Log.d("FolderPermission", "Final permission result: $hasPermission")
+    return hasPermission
   }
 
   private fun openDirectory(path: String?) {
@@ -94,55 +99,10 @@ class FolderPermissionPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, P
       val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
         // Handle different path formats
         if (path != null) {
-          val cleanPath = path.removePrefix("/")
-          Log.d("FolderPermission", "Requesting permission for path: $cleanPath")
-          
-          // Try to construct the most appropriate URI for the given path
-          val initialUri = when {
-            // Handle Android/data paths
-            cleanPath.startsWith("Android/data/") -> {
-              Log.d("FolderPermission", "Detected Android/data path")
-              DocumentsContract.buildDocumentUri(
-                "com.android.externalstorage.documents", 
-                "primary:$cleanPath"
-              )
-            }
-            // Handle Android/media paths  
-            cleanPath.startsWith("Android/media/") -> {
-              Log.d("FolderPermission", "Detected Android/media path")
-              DocumentsContract.buildDocumentUri(
-                "com.android.externalstorage.documents", 
-                "primary:$cleanPath"
-              )
-            }
-            // Handle Android/obb paths
-            cleanPath.startsWith("Android/obb/") -> {
-              Log.d("FolderPermission", "Detected Android/obb path")
-              DocumentsContract.buildDocumentUri(
-                "com.android.externalstorage.documents", 
-                "primary:$cleanPath"
-              )
-            }
-            // Handle any Android subdirectory
-            cleanPath.startsWith("Android/") -> {
-              Log.d("FolderPermission", "Detected Android subdirectory path")
-              DocumentsContract.buildDocumentUri(
-                "com.android.externalstorage.documents", 
-                "primary:$cleanPath"
-              )
-            }
-            // Handle regular storage paths (Downloads, Documents, Pictures, etc.)
-            else -> {
-              Log.d("FolderPermission", "Detected regular storage path")
-              // Try to build URI for regular external storage path
-              DocumentsContract.buildDocumentUri(
-                "com.android.externalstorage.documents", 
-                "primary:$cleanPath"
-              )
-            }
-          }
-          
-          Log.d("FolderPermission", "Setting initial URI to: $initialUri")
+          val initialUri = DocumentsContract.buildDocumentUri(
+            "com.android.externalstorage.documents",
+            "primary:$path"
+          )
           putExtra(DocumentsContract.EXTRA_INITIAL_URI, initialUri)
         }
         
