@@ -25,26 +25,44 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _checkPermission() async {
     try {
+      print('Checking permission for path: $folderPath');
       final permission = await FolderPermission.checkPermission(
         path: folderPath,
       );
+      print('Permission check result: $permission');
       setState(() {
         hasPermission = permission;
       });
     } catch (e) {
       print('Error checking permission: $e');
+      setState(() {
+        hasPermission = false;
+      });
     }
   }
 
   Future<void> _requestPermission() async {
     try {
+      print('Requesting permission for path: $folderPath');
       final granted = await FolderPermission.request(path: folderPath);
+      print('Permission request result: $granted');
+
       if (granted) {
-        // After granting permission, check the permission status
+        print('Permission granted, rechecking status...');
+        // Add a small delay to ensure the permission is fully processed
+        await Future.delayed(const Duration(milliseconds: 500));
         await _checkPermission();
+      } else {
+        print('Permission was not granted');
+        setState(() {
+          hasPermission = false;
+        });
       }
     } catch (e) {
       print('Error requesting permission: $e');
+      setState(() {
+        hasPermission = false;
+      });
     }
   }
 
