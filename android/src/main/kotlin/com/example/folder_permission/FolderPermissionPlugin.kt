@@ -28,7 +28,6 @@ class FolderPermissionPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, P
   private lateinit var context: Context
   private var activity: Activity? = null
   private var pendingResult: MethodChannel.Result? = null
-  private var requestedPath: String? = null
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "folder_permission")
@@ -40,7 +39,6 @@ class FolderPermissionPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, P
     when (call.method) {
       "request_permission" -> {
         val path = call.argument<String>("path")
-        requestedPath = path
         pendingResult = result
         openDirectory(path)
       }
@@ -106,8 +104,8 @@ class FolderPermissionPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, P
           putExtra(DocumentsContract.EXTRA_INITIAL_URI, initialUri)
         }
         
-        // Add flags to make the intent more likely to work
-        addCategory(Intent.CATEGORY_DEFAULT)
+//        // Add flags to make the intent more likely to work
+//        addCategory(Intent.CATEGORY_DEFAULT)
       }
       
       Log.d("FolderPermission", "Starting document tree picker...")
@@ -127,35 +125,8 @@ class FolderPermissionPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, P
             val takeFlags: Int = Intent.FLAG_GRANT_READ_URI_PERMISSION
             context.contentResolver.takePersistableUriPermission(uri, takeFlags)
 
-            // Check if permission was actually granted
-            val uriPermissions = context.contentResolver.persistedUriPermissions
             Log.d("FolderPermission", "Permission granted for URI: $uri")
-            Log.d("FolderPermission", "Requested path: $requestedPath")
-            
-            val hasPermission = uriPermissions.any { permission ->
-              val uriPath = permission.uri.toString()
-              Log.d("FolderPermission", "Checking granted URI: $uriPath")
-              
-              // Clean the path by removing leading slash
-              val cleanPath = requestedPath?.removePrefix("/") ?: ""
-              val encodedPath = Uri.encode(cleanPath)
-              
-              // Check multiple ways the path might be encoded in the URI
-              val pathVariants = listOf(
-                cleanPath,
-                encodedPath,
-                cleanPath.replace("/", "%2F"),
-                cleanPath.replace("/", "%2f")
-              )
-              
-              val matches = pathVariants.any { variant ->
-                uriPath.contains(variant, ignoreCase = true)
-              }
-              
-              Log.d("FolderPermission", "URI matches requested path: $matches, isReadPermission: ${permission.isReadPermission}")
-              matches && permission.isReadPermission
-            }
-            pendingResult?.success(hasPermission)
+            pendingResult?.success(true)
           } ?: run {
             pendingResult?.success(false)
           }
